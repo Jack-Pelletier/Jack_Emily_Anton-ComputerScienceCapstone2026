@@ -1,0 +1,57 @@
+-- DROP DATABASE IF EXISTS CapstoneDB;
+CREATE DATABASE IF NOT EXISTS CapstoneDB;
+
+USE CapstoneDB;
+
+CREATE TABLE FacultyAccount(
+AccountID INT NOT NULL AUTO_INCREMENT,
+Email VARCHAR (100),
+PRIMARY KEY(AccountID)
+);
+
+CREATE TABLE Project(
+ProjectID INT NOT NULL AUTO_INCREMENT,
+ProjectName VARCHAR(500),
+ProjectDiscription VARCHAR(2000),
+PRIMARY KEY(ProjectID)
+);
+
+CREATE TABLE StudentInfo(
+StudentID INT NOT NULL AUTO_INCREMENT,
+ProjectID INT NOT NULL, 
+FOREIGN KEY (ProjectID) REFERENCES Project(ProjectID),
+StudentName VARCHAR(150),
+StudentEmail VARCHAR(100),
+StudentPhoneNumber VARCHAR (14),
+StudentInfoPublic BOOLEAN,
+PRIMARY KEY(StudentID)
+);
+
+CREATE TABLE StudentWebsites(
+WebsiteID INT NOT NULL AUTO_INCREMENT, 
+StudentID INT NOT NULL,
+FOREIGN KEY (StudentID) REFERENCES StudentInfo(StudentID),
+WebsiteName VARCHAR(100),
+WebsiteURL VARCHAR(500),
+PRIMARY KEY(WebsiteID)
+);
+
+CREATE TABLE Keywords(
+KeywordID INT NOT NULL AUTO_INCREMENT, 
+KeywordName VARCHAR(100) NOT NULL, 
+PRIMARY KEY (KeywordID),
+UNIQUE (KeywordName)
+);
+
+CREATE TABLE ProjectKeywords(
+ProjectID INT NOT NULL, 
+KeywordID INT NOT NULL, 
+PRIMARY KEY (ProjectID, KeywordID), 
+FOREIGN KEY (ProjectID) REFERENCES Project(ProjectID),
+FOREIGN KEY (KeywordID) REFERENCES Keywords(KeywordID)
+);
+
+
+
+
+
