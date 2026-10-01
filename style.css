@@ -1,0 +1,260 @@
+/* General page styling */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: white;
+}
+
+/* Top section of the website */
+header {
+  height: 80px;
+  background-color: #0057b8;
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 30px;
+}
+
+/* Capstone Street logo */
+.logo {
+  width: 150px;
+  height: 70px;
+  object-fit: contain;
+  display: block;
+  background-color: transparent;
+}
+
+/* Navigation bar */
+nav a {
+  color: white;
+  text-decoration: none;
+  margin-left: 25px;
+}
+
+/* Changes the link when the mouse is over it */
+nav a:hover {
+  text-decoration: underline;
+}
+
+/* Main page content */
+main {
+  min-height: calc(100vh - 140px);
+}
+
+/* Featured projects section */
+.project-abstracts {
+  padding: 40px;
+}
+
+/* Featured projects title */
+.project-abstracts h1 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+/* Holds the abstract boxes */
+.abstract-container {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  flex-wrap: wrap;
+}
+
+/* Removes normal link styling from project boxes */
+.project-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Individual project abstract box */
+.abstract-box {
+  width: 300px;
+  min-height: 200px;
+
+  border: 2px solid #0057b8;
+  border-radius: 8px;
+
+  padding: 20px;
+  background-color: white;
+
+  box-sizing: border-box;
+
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+/* Changes project box when mouse is over it */
+.abstract-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Project title */
+.abstract-box h2 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+/* Project abstract text */
+.abstract-box p {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Projects page introduction */
+.projects-intro {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px;
+  text-align: center;
+}
+
+.projects-intro h1 {
+  font-size: 32px;
+  margin-bottom: 20px;
+}
+
+.projects-intro p {
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+/* Search bar */
+.search-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.search-container input {
+  width: 500px;
+  padding: 12px;
+
+  font-size: 16px;
+
+  border: 1px solid #999;
+  border-radius: 5px 0 0 5px;
+}
+
+.search-container button {
+  padding: 12px 20px;
+
+  font-size: 16px;
+
+  background-color: #0057b8;
+  color: white;
+
+  border: none;
+  border-radius: 0 5px 5px 0;
+
+  cursor: pointer;
+}
+
+.search-container button:hover {
+  background-color: #004494;
+}
+
+/* Area where projects will be displayed */
+.project-list {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px 40px 50px 40px;
+}
+
+.project-list h2 {
+  text-align: center;
+}
+
+/* Bottom section of the website */
+/* Bottom section of the website */
+footer {
+  background-color: #0057b8;
+  color: white;
+  padding: 25px 30px;
+}
+
+/* Holds footer content */
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Capstone Street text in footer */
+.footer-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Footer navigation */
+.footer-nav {
+  display: flex;
+  gap: 25px;
+}
+
+/* Footer navigation links */
+.footer-nav a {
+  color: white;
+  text-decoration: none;
+  margin-left: 0;
+}
+
+/* Footer navigation hover */
+.footer-nav a:hover {
+  text-decoration: underline;
+}
+
+/* About page */
+.about-section {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px;
+}
+
+.about-section h1 {
+  text-align: center;
+  font-size: 32px;
+  margin-bottom: 40px;
+}
+
+.about-section h2 {
+  color: #0057b8;
+  margin-top: 30px;
+}
+
+.about-section p {
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+/* Values section */
+.values-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.value-box {
+  flex: 1 1 400px;
+
+  border: 2px solid #0057b8;
+  border-radius: 8px;
+
+  padding: 20px;
+  background-color: white;
+}
+
+.value-box h3 {
+  color: #0057b8;
+  margin-top: 0;
+}
+
+.value-box p {
+  margin-bottom: 0;
+}
