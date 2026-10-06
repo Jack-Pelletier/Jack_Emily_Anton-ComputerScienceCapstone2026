@@ -1,14 +1,15 @@
 /* General page styling */
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: white;
+  font-family: 'Arial', sans-serif;
+  background-color: #f5f5f5;
+  color: #222;
 }
 
 /* Top section of the website */
 header {
   height: 80px;
-  background-color: #0057b8;
+  background-color: #1B2A4A;
   color: white;
 
   display: flex;
@@ -16,6 +17,8 @@ header {
   justify-content: space-between;
 
   padding: 0 30px;
+
+  border-bottom: 4px solid #FFD100;
 }
 
 /* Capstone Street logo */
@@ -32,16 +35,22 @@ nav a {
   color: white;
   text-decoration: none;
   margin-left: 25px;
+  font-weight: bold;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 /* Changes the link when the mouse is over it */
 nav a:hover {
-  text-decoration: underline;
+  color: #5BAADC;
+  text-decoration: none;
 }
 
 /* Main page content */
 main {
   min-height: calc(100vh - 140px);
+  background-color: #f5f5f5;
 }
 
 /* Featured projects section */
@@ -51,8 +60,23 @@ main {
 
 /* Featured projects title */
 .project-abstracts h1 {
+  display: block;
   text-align: center;
   margin-bottom: 30px;
+  color: #1B2A4A;
+  font-size: 28px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: none;
+  position: relative;
+}
+.project-abstracts h1::after {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: #FFD100;
+  margin: 10px auto 0;
 }
 
 /* Holds the abstract boxes */
@@ -74,8 +98,9 @@ main {
   width: 300px;
   min-height: 200px;
 
-  border: 2px solid #0057b8;
-  border-radius: 8px;
+  border: 2px solid #1B2A4A;
+  border-top: 4px solid #FFD100;
+  border-radius: 4px;
 
   padding: 20px;
   background-color: white;
@@ -83,19 +108,20 @@ main {
   box-sizing: border-box;
 
   cursor: pointer;
-  transition: 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 /* Changes project box when mouse is over it */
 .abstract-box:hover {
   transform: translateY(-5px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 16px rgba(27, 42, 74, 0.18);
 }
 
 /* Project title */
 .abstract-box h2 {
   margin-top: 0;
   font-size: 20px;
+  color: #1B2A4A;
 }
 
 /* Project abstract text */
@@ -115,6 +141,18 @@ main {
 .projects-intro h1 {
   font-size: 32px;
   margin-bottom: 20px;
+  color: #1B2A4A;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  position: relative;
+}
+.projects-intro h1::after {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: #FFD100;
+  margin: 10px auto 0;
 }
 
 .projects-intro p {
@@ -135,26 +173,36 @@ main {
 
   font-size: 16px;
 
-  border: 1px solid #999;
-  border-radius: 5px 0 0 5px;
+  border: 2px solid #1B2A4A;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+
+  outline: none;
+}
+
+.search-container input:focus {
+  border-color: #FFD100;
 }
 
 .search-container button {
-  padding: 12px 20px;
+  padding: 12px 22px;
 
   font-size: 16px;
+  font-weight: bold;
 
-  background-color: #0057b8;
-  color: white;
+  background-color: #FFD100;
+  color: #1B2A4A;
 
-  border: none;
-  border-radius: 0 5px 5px 0;
+  border: 2px solid #FFD100;
+  border-radius: 0 4px 4px 0;
 
   cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 .search-container button:hover {
-  background-color: #004494;
+  background-color: #E6BC00;
+  border-color: #E6BC00;
 }
 
 /* Area where projects will be displayed */
@@ -166,14 +214,15 @@ main {
 
 .project-list h2 {
   text-align: center;
+  color: #1B2A4A;
 }
 
 /* Bottom section of the website */
-/* Bottom section of the website */
 footer {
-  background-color: #0057b8;
+  background-color: #1B2A4A;
   color: white;
   padding: 25px 30px;
+  border-top: 4px solid #FFD100;
 }
 
 /* Holds footer content */
@@ -189,6 +238,7 @@ footer {
 .footer-title {
   font-size: 18px;
   font-weight: bold;
+  letter-spacing: 0.04em;
 }
 
 /* Footer navigation */
@@ -201,12 +251,15 @@ footer {
 .footer-nav a {
   color: white;
   text-decoration: none;
-  margin-left: 0;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.04em;
 }
 
 /* Footer navigation hover */
 .footer-nav a:hover {
-  text-decoration: underline;
+  color: #FFD100;
 }
 
 /* About page */
@@ -220,11 +273,25 @@ footer {
   text-align: center;
   font-size: 32px;
   margin-bottom: 40px;
+  color: #1B2A4A;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  position: relative;
+}
+.about-section h1::after {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: #FFD100;
+  margin: 10px auto 0;
 }
 
 .about-section h2 {
-  color: #0057b8;
+  color: #1B2A4A;
   margin-top: 30px;
+  padding-left: 10px;
+  border-left: 4px solid #FFD100;
 }
 
 .about-section p {
@@ -243,18 +310,44 @@ footer {
 .value-box {
   flex: 1 1 400px;
 
-  border: 2px solid #0057b8;
-  border-radius: 8px;
+  border: 2px solid #1B2A4A;
+  border-top: 4px solid #FFD100;
+  border-radius: 4px;
 
   padding: 20px;
   background-color: white;
 }
 
 .value-box h3 {
-  color: #0057b8;
+  color: #1B2A4A;
   margin-top: 0;
 }
 
 .value-box p {
   margin-bottom: 0;
+}
+
+/* Merrimack College branding in header */
+.merrimack-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-left: 2px solid rgba(255, 255, 255, 0.25);
+  padding-left: 20px;
+  margin-left: 10px;
+}
+
+.merrimack-shield {
+  width: 36px;
+  height: 43px;
+  flex-shrink: 0;
+}
+
+.merrimack-name {
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
 }
