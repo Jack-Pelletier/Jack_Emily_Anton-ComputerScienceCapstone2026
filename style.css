@@ -351,3 +351,196 @@ footer {
   line-height: 1.4;
   text-transform: uppercase;
 }
+
+/* Upload page */
+.upload-section {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px;
+}
+
+.upload-section h1 {
+  text-align: center;
+  font-size: 32px;
+  margin-bottom: 10px;
+  color: #1B2A4A;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  position: relative;
+}
+.upload-section h1::after {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: #FFD100;
+  margin: 10px auto 20px;
+}
+
+.upload-intro {
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #444;
+  margin-bottom: 35px;
+}
+
+/* Form fieldset */
+.upload-fieldset {
+  border: 2px solid #1B2A4A;
+  border-top: 4px solid #FFD100;
+  border-radius: 4px;
+  padding: 25px 30px;
+  margin-bottom: 30px;
+  background-color: white;
+}
+
+.upload-fieldset legend {
+  font-size: 17px;
+  font-weight: bold;
+  color: #1B2A4A;
+  padding: 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.optional-label {
+  font-size: 13px;
+  font-weight: normal;
+  color: #666;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.fieldset-note {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 20px 0;
+}
+
+/* Individual form field */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #1B2A4A;
+  margin-bottom: 6px;
+}
+
+.required {
+  color: #c0392b;
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 10px 12px;
+  font-size: 15px;
+  font-family: inherit;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.2s;
+  background-color: #fafafa;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: #1B2A4A;
+  background-color: white;
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* Two-column row */
+.form-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.form-row .form-group {
+  flex: 1 1 calc(50% - 10px);
+  min-width: 200px;
+}
+
+/* PDF file drop area */
+.file-drop-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 18px 16px;
+  border: 2px dashed #1B2A4A;
+  border-radius: 4px;
+  background-color: #f0f4fa;
+  cursor: pointer;
+}
+
+.file-drop-text {
+  font-size: 14px;
+  color: #555;
+}
+
+.file-browse-btn {
+  padding: 8px 16px;
+  background-color: #FFD100;
+  color: #1B2A4A;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.file-browse-btn:hover {
+  background-color: #E6BC00;
+}
+
+/* Hide the real file input, label acts as trigger */
+.file-drop-area input[type="file"] {
+  display: none;
+}
+
+.file-name-display {
+  font-size: 13px;
+  color: #888;
+  font-style: italic;
+}
+
+/* Submit button */
+.form-submit {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.submit-btn {
+  padding: 14px 50px;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: #1B2A4A;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+  background-color: #2a3f6f;
+}
