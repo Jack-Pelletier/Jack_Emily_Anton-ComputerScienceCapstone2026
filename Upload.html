@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Capstone Street</title>
+  <title>Upload - Capstone Street</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
@@ -77,12 +77,122 @@
   <!-- MAIN CONTENT -->
   <main>
 
+    <!-- UPLOAD FORM -->
+    <section class="upload-section">
+
+      <h1>Submit Your Project</h1>
+
+      <p class="upload-intro">
+        Fill out the form below to submit your capstone project for review.
+        A faculty member will approve your submission before it appears on the site.
+        Contact information is completely optional.
+      </p>
+
+      <form class="upload-form">
+
+        <!-- PROJECT INFORMATION -->
+        <fieldset class="upload-fieldset">
+
+          <legend>Project Information</legend>
+
+          <div class="form-group">
+            <label for="projectTitle">Project Title <span class="required">*</span></label>
+            <input type="text" id="projectTitle" placeholder="Enter your project title">
+          </div>
+
+          <div class="form-group">
+            <label for="projectAbstract">Abstract <span class="required">*</span></label>
+            <textarea id="projectAbstract" rows="5" placeholder="Write a short overview of your project"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="projectTags">Tags / Keywords</label>
+            <input type="text" id="projectTags" placeholder="e.g. Python, Machine Learning, Healthcare">
+            <span class="form-hint">Separate keywords with commas</span>
+          </div>
+
+          <div class="form-group">
+            <label for="projectIndustry">Industry</label>
+            <input type="text" id="projectIndustry" placeholder="e.g. Finance, Healthcare, Education">
+          </div>
+
+          <div class="form-group">
+            <label for="projectFile">Project PDF <span class="required">*</span></label>
+            <div class="file-drop-area">
+              <span class="file-drop-text">Drag &amp; drop your PDF here, or</span>
+              <label for="projectFile" class="file-browse-btn">Browse File</label>
+              <input type="file" id="projectFile" accept=".pdf">
+              <span class="file-name-display">No file selected</span>
+            </div>
+          </div>
+
+        </fieldset>
+
+
+        <!-- CONTACT INFORMATION -->
+        <fieldset class="upload-fieldset">
+
+          <legend>Contact Information <span class="optional-label">(Optional)</span></legend>
+
+          <p class="fieldset-note">
+            You may remain completely anonymous. Only fill in what you are comfortable sharing.
+          </p>
+
+          <div class="form-row">
+
+            <div class="form-group">
+              <label for="contactName">Full Name</label>
+              <input type="text" id="contactName" placeholder="Your name">
+            </div>
+
+            <div class="form-group">
+              <label for="contactEmail">Email</label>
+              <input type="email" id="contactEmail" placeholder="yourname@merrimack.edu">
+            </div>
+
+          </div>
+
+          <div class="form-row">
+
+            <div class="form-group">
+              <label for="contactLinkedin">LinkedIn</label>
+              <input type="text" id="contactLinkedin" placeholder="linkedin.com/in/yourprofile">
+            </div>
+
+            <div class="form-group">
+              <label for="contactGithub">GitHub</label>
+              <input type="text" id="contactGithub" placeholder="github.com/yourusername">
+            </div>
+
+          </div>
+
+          <div class="form-row">
+
+            <div class="form-group">
+              <label for="contactPhone">Phone Number</label>
+              <input type="tel" id="contactPhone" placeholder="(555) 555-5555">
+            </div>
+
+          </div>
+
+        </fieldset>
+
+
+        <!-- SUBMIT -->
+        <div class="form-submit">
+          <button type="button" class="submit-btn">Submit Project</button>
+        </div>
+
+      </form>
+
+    </section>
+
   </main>
 
 
   <!-- CAPSTONE STREET FOOTER -->
   <footer>
-    Capstone Street Footer
+
   </footer>
 
 </body>
