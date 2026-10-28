@@ -1,0 +1,10 @@
+Run Sql creation Script
+For development edit + run migration script in sql
+
+ensure you have node.js installed on your device
+First time running run : npm ci
+
+- it is node.js installation for project configuration
+
+Then run:
+npm start

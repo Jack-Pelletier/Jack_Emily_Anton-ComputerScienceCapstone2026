@@ -8,6 +8,7 @@
   <title>Capstone Street</title>
 
   <link rel="stylesheet" href="style.css">
+  <script src="/auth-ui.js" defer></script>
 </head>
 
 <body>
@@ -66,11 +67,14 @@
     </div>
 
     <!-- NAVIGATION BAR -->
-    <nav>
+    <nav aria-label="Main navigation">
       <a href="home.html">Home</a>
       <a href="projects.html">Projects</a>
       <a href="upload.html">Upload</a>
       <a href="about.html">About</a>
+      <a href="/AdminDashboard.html" data-admin-link hidden>Admin Dashboard</a>
+      <a href="/auth/google" data-login>Log in</a>
+      <button class="nav-button" type="button" data-logout hidden>Log out</button>
     </nav>
 
   </header>

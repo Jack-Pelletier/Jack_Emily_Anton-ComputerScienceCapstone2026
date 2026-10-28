@@ -8,6 +8,8 @@
   <title>Upload - Capstone Street</title>
 
     <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+  <script src="/auth-ui.js" defer></script>
 </head>
 
 <body>
@@ -64,11 +66,14 @@
     </div>
 
     <!-- NAVIGATION BAR -->
-    <nav>
+    <nav aria-label="Main navigation">
       <a href="home.html">Home</a>
       <a href="projects.html">Projects</a>
       <a href="upload.html">Upload</a>
       <a href="about.html">About</a>
+      <a href="/AdminDashboard.html" data-admin-link hidden>Admin Dashboard</a>
+      <a href="/auth/google" data-login>Log in</a>
+      <button class="nav-button" type="button" data-logout hidden>Log out</button>
     </nav>
 
   </header>
@@ -88,7 +93,7 @@
         Contact information is completely optional.
       </p>
 
-      <form class="upload-form">
+      <form class="upload-form" action="/api/projects" method="post" enctype="multipart/form-data">
 
         <!-- PROJECT INFORMATION -->
         <fieldset class="upload-fieldset">
@@ -97,23 +102,23 @@
 
           <div class="form-group">
             <label for="projectTitle">Project Title <span class="required">*</span></label>
-            <input type="text" id="projectTitle" placeholder="Enter your project title">
+            <input type="text" id="projectTitle" name="projectTitle" maxlength="500" required placeholder="Enter your project title">
           </div>
 
           <div class="form-group">
             <label for="projectAbstract">Abstract <span class="required">*</span></label>
-            <textarea id="projectAbstract" rows="5" placeholder="Write a short overview of your project"></textarea>
+            <textarea id="projectAbstract" name="projectAbstract" maxlength="2000" required rows="5" placeholder="Write a short overview of your project"></textarea>
           </div>
 
           <div class="form-group">
             <label for="projectTags">Tags / Keywords</label>
-            <input type="text" id="projectTags" placeholder="e.g. Python, Machine Learning, Healthcare">
-            <span class="form-hint">Separate keywords with commas</span>
+            <input type="text" id="projectTags" name="projectTags" maxlength="2099" placeholder="e.g. Python, Machine Learning, Healthcare">
+            <span class="form-hint">Separate keywords with commas. Up to 20 keywords, 100 characters each.</span>
           </div>
 
           <div class="form-group">
             <label for="projectIndustry">Industry</label>
-            <input type="text" id="projectIndustry" placeholder="e.g. Finance, Healthcare, Education">
+            <input type="text" id="projectIndustry" name="projectIndustry" maxlength="100" placeholder="e.g. Finance, Healthcare, Education">
           </div>
 
           <div class="form-group">
@@ -121,9 +126,10 @@
             <div class="file-drop-area">
               <span class="file-drop-text">Drag &amp; drop your PDF here, or</span>
               <label for="projectFile" class="file-browse-btn">Browse File</label>
-              <input type="file" id="projectFile" accept=".pdf">
+              <input type="file" id="projectFile" name="projectFile" accept=".pdf,application/pdf" required aria-describedby="pdfHint">
               <span class="file-name-display">No file selected</span>
             </div>
+            <span class="form-hint" id="pdfHint">One PDF, up to 10 MB.</span>
           </div>
 
         </fieldset>
@@ -135,19 +141,19 @@
           <legend>Contact Information <span class="optional-label">(Optional)</span></legend>
 
           <p class="fieldset-note">
-            You may remain completely anonymous. Only fill in what you are comfortable sharing.
+            You may leave these fields blank. Contact information is kept private for faculty review.
           </p>
 
           <div class="form-row">
 
             <div class="form-group">
               <label for="contactName">Full Name</label>
-              <input type="text" id="contactName" placeholder="Your name">
+              <input type="text" id="contactName" name="contactName" maxlength="150" placeholder="Your name">
             </div>
 
             <div class="form-group">
               <label for="contactEmail">Email</label>
-              <input type="email" id="contactEmail" placeholder="yourname@merrimack.edu">
+              <input type="email" id="contactEmail" name="contactEmail" maxlength="100" placeholder="yourname@merrimack.edu">
             </div>
 
           </div>
@@ -156,12 +162,12 @@
 
             <div class="form-group">
               <label for="contactLinkedin">LinkedIn</label>
-              <input type="text" id="contactLinkedin" placeholder="linkedin.com/in/yourprofile">
+              <input type="text" id="contactLinkedin" name="contactLinkedin" maxlength="500" placeholder="https://linkedin.com/in/yourprofile">
             </div>
 
             <div class="form-group">
               <label for="contactGithub">GitHub</label>
-              <input type="text" id="contactGithub" placeholder="github.com/yourusername">
+              <input type="text" id="contactGithub" name="contactGithub" maxlength="500" placeholder="https://github.com/yourusername">
             </div>
 
           </div>
@@ -170,7 +176,7 @@
 
             <div class="form-group">
               <label for="contactPhone">Phone Number</label>
-              <input type="tel" id="contactPhone" placeholder="(555) 555-5555">
+              <input type="tel" id="contactPhone" name="contactPhone" maxlength="14" placeholder="(555) 555-5555">
             </div>
 
           </div>
@@ -180,8 +186,9 @@
 
         <!-- SUBMIT -->
         <div class="form-submit">
-          <button type="button" class="submit-btn">Submit Project</button>
+          <button type="submit" class="submit-btn">Submit Project</button>
         </div>
+        <p id="uploadStatus" role="status" aria-live="polite"></p>
 
       </form>
 

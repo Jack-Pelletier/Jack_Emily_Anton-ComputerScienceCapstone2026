@@ -8,13 +8,15 @@ body {
 
 /* Top section of the website */
 header {
-  height: 80px;
+  min-height: 80px;
   background-color: #1B2A4A;
   color: white;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
 
   padding: 0 30px;
 
@@ -31,20 +33,85 @@ header {
 }
 
 /* Navigation bar */
-nav a {
+header nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 14px 25px;
+  padding: 12px 0;
+}
+
+nav a,
+.nav-button {
   color: white;
   text-decoration: none;
-  margin-left: 25px;
+  margin: 0;
+  font-family: inherit;
   font-weight: bold;
   font-size: 15px;
+  line-height: normal;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nav-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
 }
 
 /* Changes the link when the mouse is over it */
-nav a:hover {
+nav a:hover,
+.nav-button:hover {
   color: #5BAADC;
   text-decoration: none;
+}
+
+nav a[aria-current="page"] {
+  color: #FFD100;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+header a:focus-visible,
+.nav-button:focus-visible {
+  outline: 3px solid white;
+  outline-offset: 4px;
+}
+
+@media (max-width: 1000px) {
+  header {
+    padding: 10px 20px;
+  }
+
+  header nav {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: center;
+  }
+
+  .merrimack-brand {
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 540px) {
+  header {
+    gap: 8px 12px;
+  }
+
+  header .merrimack-brand {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 12px;
+  }
+
 }
 
 /* Main page content */
@@ -510,9 +577,21 @@ footer {
   background-color: #E6BC00;
 }
 
-/* Hide the real file input, label acts as trigger */
+/* Keep the file input focusable for keyboard use and form validation. */
 .file-drop-area input[type="file"] {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+
+.file-drop-area:focus-within,
+.file-drop-area.drag-over {
+  outline: 3px solid #FFD100;
+  outline-offset: 3px;
 }
 
 .file-name-display {
@@ -529,6 +608,7 @@ footer {
 
 .submit-btn {
   padding: 14px 50px;
+  font-family: inherit;
   font-size: 16px;
   font-weight: bold;
   text-transform: uppercase;
@@ -543,4 +623,37 @@ footer {
 
 .submit-btn:hover {
   background-color: #2a3f6f;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.status-error {
+  color: #a5281b;
+}
+
+.status-success {
+  color: #21633c;
+}
+
+.project-card {
+  border: 2px solid #1B2A4A;
+  border-top: 4px solid #FFD100;
+  border-radius: 4px;
+  padding: 20px;
+  margin-top: 20px;
+  background: white;
+  overflow-wrap: anywhere;
+}
+
+.project-card h3,
+.project-card a {
+  color: #1B2A4A;
+}
+
+.project-card p {
+  white-space: pre-wrap;
+  line-height: 1.5;
 }
