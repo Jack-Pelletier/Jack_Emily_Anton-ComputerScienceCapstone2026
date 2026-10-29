@@ -2,7 +2,7 @@
 USE CapstoneDB;
 
 SET @dev_emily_email = 'dalbae@merrimack.edu';
-SET @dev_jack_email = '';
+SET @dev_jack_email = 'pelletierje@merrimack.edu';
 SET @dev_anton_email = '';
 
 INSERT INTO FacultyAccount (Email)
