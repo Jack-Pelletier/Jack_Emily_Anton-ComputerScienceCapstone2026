@@ -59,6 +59,27 @@ function readContact(body) {
   return contact;
 }
 
+// The upload form sends every team member as one JSON text field named "contacts".
+// Older single-contact fields (contactName, contactEmail, ...) still work when it is absent.
+const maxTeamMembers = 3;
+function readContacts(body) {
+  if (body.contacts === undefined || body.contacts === '') {
+    const single = readContact(body);
+    return Object.values(single).some(Boolean) ? [{ ...single, isPublic: false }] : [];
+  }
+  if (typeof body.contacts !== 'string') throw badRequest('Team members must be text.');
+  let members;
+  try { members = JSON.parse(body.contacts); } catch { throw badRequest('Team member details are invalid.'); }
+  if (!Array.isArray(members)) throw badRequest('Team member details are invalid.');
+  if (members.length > maxTeamMembers) throw badRequest(`Add no more than ${maxTeamMembers} team members.`);
+  return members.map(member => {
+    if (!member || typeof member !== 'object' || Array.isArray(member)) throw badRequest('Team member details are invalid.');
+    if (member.anonymous !== undefined && typeof member.anonymous !== 'boolean') throw badRequest('Anonymous must be true or false.');
+    // Contact details are shown publicly unless this person chose to stay anonymous.
+    return { ...readContact(member), isPublic: member.anonymous !== true };
+  }).filter(({ isPublic, ...fields }) => Object.values(fields).some(Boolean));
+}
+
 function validatePdf(file) {
   if (!file || !/\.pdf$/i.test(file.originalname) || file.buffer.subarray(0, 5).toString() !== '%PDF-') {
     throw badRequest('Choose a PDF file.');
@@ -79,11 +100,12 @@ async function saveKeywords(connection, id, keywords) {
 }
 
 async function saveContact(connection, id, contact) {
-  if (!Object.values(contact).some(Boolean)) return;
+  const { isPublic = false, ...fields } = contact;
+  if (!Object.values(fields).some(Boolean)) return;
   const [student] = await connection.execute(
     `INSERT INTO StudentInfo (ProjectID, StudentName, StudentEmail, StudentPhoneNumber, StudentInfoPublic)
-     VALUES (?, ?, ?, ?, FALSE)`,
-    [id, contact.contactName || null, contact.contactEmail || null, contact.contactPhone || null]
+     VALUES (?, ?, ?, ?, ?)`,
+    [id, contact.contactName || null, contact.contactEmail || null, contact.contactPhone || null, isPublic === true]
   );
   for (const [label, url] of [['LinkedIn', contact.contactLinkedin], ['GitHub', contact.contactGithub]]) {
     if (url) await connection.execute(
@@ -92,4 +114,4 @@ async function saveContact(connection, id, contact) {
   }
 }
 
-module.exports = { badRequest, readText, projectId, readKeywords, readContact, contactFields, validatePdf, saveKeywords, saveContact };
+module.exports = { badRequest, readText, projectId, readKeywords, readContact, readContacts, contactFields, validatePdf, saveKeywords, saveContact };
