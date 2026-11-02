@@ -8,7 +8,7 @@ const path = require('node:path');
 const helmet = require('helmet');
 const { installFacultyAuth, authConfigFromEnv } = require('./auth');
 
-const { readText, projectId, readKeywords, readContact, validatePdf, saveKeywords, saveContact } = require('./project-data');
+const { readText, projectId, readKeywords, readContacts, validatePdf, saveKeywords, saveContact } = require('./project-data');
 const { installAdminUserRoutes } = require('./admin-users');
 const { installAdminProjectRoutes } = require('./admin-projects');
 const { startPdfCleanup } = require('./pdf-cleanup');
@@ -54,7 +54,7 @@ function createApp({ db, storage, bucket = 'project-pdfs', auth = null, trustPro
 
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 12, parts: 13, fieldSize: 8000 }
+    limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 12, parts: 13, fieldSize: 40000 }
   });
 
   app.post('/api/projects', upload.single('projectFile'), async (req, res) => {
@@ -63,7 +63,7 @@ function createApp({ db, storage, bucket = 'project-pdfs', auth = null, trustPro
     const abstract = readText(body, 'projectAbstract', 2000, true);
     const industry = readText(body, 'projectIndustry', 100);
     const keywords = readKeywords(body);
-    const contact = readContact(body);
+    const contacts = readContacts(body);
     const file = req.file;
     validatePdf(file);
 
@@ -89,7 +89,7 @@ function createApp({ db, storage, bucket = 'project-pdfs', auth = null, trustPro
       );
 
       await saveKeywords(connection, savedId, keywords);
-      await saveContact(connection, savedId, contact);
+      for (const contact of contacts) await saveContact(connection, savedId, contact);
       committing = true;
       await connection.commit();
     } catch (error) {
@@ -131,6 +131,27 @@ function createApp({ db, storage, bucket = 'project-pdfs', auth = null, trustPro
     );
     for (const project of projects) {
       project.Keywords = (project.Keywords || []).sort((a, b) => a.localeCompare(b)).join(', ');
+      project.Team = [];
+    }
+    // Only people who did not choose to be anonymous are listed.
+    if (projects.length) {
+      const [people] = await db.execute(
+        `SELECT s.StudentID, s.ProjectID, s.StudentName, s.StudentEmail, s.StudentPhoneNumber, w.WebsiteName, w.WebsiteURL
+         FROM StudentInfo s LEFT JOIN StudentWebsites w ON w.StudentID = s.StudentID
+         WHERE s.StudentInfoPublic = TRUE AND s.ProjectID IN (${projects.map(() => '?').join(', ')})
+         ORDER BY s.StudentID, w.WebsiteID`, projects.map(project => project.ProjectID)
+      );
+      const members = new Map();
+      for (const row of people) {
+        if (!members.has(row.StudentID)) {
+          const member = { name: row.StudentName || '', email: row.StudentEmail || '', phone: row.StudentPhoneNumber || '', linkedin: '', github: '' };
+          members.set(row.StudentID, member);
+          projects.find(project => project.ProjectID === row.ProjectID)?.Team.push(member);
+        }
+        const member = members.get(row.StudentID);
+        if (row.WebsiteName === 'LinkedIn') member.linkedin = row.WebsiteURL;
+        if (row.WebsiteName === 'GitHub') member.github = row.WebsiteURL;
+      }
     }
     res.json(projects);
   });
