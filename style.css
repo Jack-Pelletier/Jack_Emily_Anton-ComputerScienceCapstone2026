@@ -398,25 +398,18 @@ footer {
 .merrimack-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
   border-left: 2px solid rgba(255, 255, 255, 0.25);
   padding-left: 20px;
   margin-left: 10px;
 }
 
-.merrimack-shield {
-  width: 36px;
-  height: 43px;
+.merrimack-logo-img {
+  height: 44px;
+  width: auto;
   flex-shrink: 0;
-}
-
-.merrimack-name {
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-  letter-spacing: 0.08em;
-  line-height: 1.4;
-  text-transform: uppercase;
+  background-color: white;
+  border-radius: 4px;
+  padding: 4px 8px;
 }
 
 /* Upload page */
@@ -598,6 +591,52 @@ footer {
   font-size: 13px;
   color: #888;
   font-style: italic;
+}
+
+/* Team size and per-member blocks */
+.form-group select {
+  padding: 10px 12px;
+  font-size: 15px;
+  font-family: inherit;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fafafa;
+  max-width: 200px;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: #1B2A4A;
+  background-color: white;
+}
+
+.team-member {
+  border: 1px solid #ddd;
+  border-left: 4px solid #FFD100;
+  border-radius: 4px;
+  padding: 14px 16px 4px;
+  margin-bottom: 16px;
+  background-color: #fcfcfc;
+}
+
+.team-member-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  color: #1B2A4A;
+}
+
+.form-group.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.form-group.checkbox-group input[type="checkbox"] {
+  width: auto;
+  padding: 0;
+  margin: 0;
 }
 
 /* Submit button */
