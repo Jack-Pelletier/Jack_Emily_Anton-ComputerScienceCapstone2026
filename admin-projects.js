@@ -36,9 +36,10 @@ function validatePatch(body) {
     if (!Array.isArray(body.contacts) || body.contacts.length > 20) throw badRequest('contacts must be an array of up to 20 contacts.');
     contacts = body.contacts.map(contact => {
       if (!contact || Array.isArray(contact) || typeof contact !== 'object' ||
-          Object.keys(contact).some(key => !contactFields.includes(key))) throw badRequest('Invalid contact fields.');
-      const value = readContact(contact);
-      if (!Object.values(value).some(Boolean)) throw badRequest('Each contact must contain at least one value.');
+          Object.keys(contact).some(key => ![...contactFields, 'contactPublic'].includes(key))) throw badRequest('Invalid contact fields.');
+      if (contact.contactPublic !== undefined && typeof contact.contactPublic !== 'boolean') throw badRequest('contactPublic must be true or false.');
+      const value = { ...readContact(contact), isPublic: contact.contactPublic === true };
+      if (!Object.values(readContact(contact)).some(Boolean)) throw badRequest('Each contact must contain at least one value.');
       return value;
     });
   }
@@ -91,13 +92,13 @@ function installAdminProjectRoutes(app, { db, storage, bucket, upload }) {
       const [projects] = await connection.execute(`${projectSelection} WHERE p.ProjectID = ?`, [id]);
       if (!projects.length) throw Object.assign(new Error('Project not found.'), { status: 404 });
       const [students] = await connection.execute(`SELECT s.StudentID, s.StudentName, s.StudentEmail,
-        s.StudentPhoneNumber, w.WebsiteName, w.WebsiteURL FROM StudentInfo s
+        s.StudentPhoneNumber, s.StudentInfoPublic, w.WebsiteName, w.WebsiteURL FROM StudentInfo s
         LEFT JOIN StudentWebsites w ON w.StudentID = s.StudentID WHERE s.ProjectID = ? ORDER BY s.StudentID, w.WebsiteID`, [id]);
       const contacts = new Map();
       for (const row of students) {
         if (!contacts.has(row.StudentID)) contacts.set(row.StudentID, {
           StudentID: row.StudentID, contactName: row.StudentName || '', contactEmail: row.StudentEmail || '',
-          contactPhone: row.StudentPhoneNumber || '', contactLinkedin: '', contactGithub: ''
+          contactPhone: row.StudentPhoneNumber || '', contactPublic: Boolean(row.StudentInfoPublic), contactLinkedin: '', contactGithub: ''
         });
         const contact = contacts.get(row.StudentID);
         if (row.WebsiteName === 'LinkedIn') contact.contactLinkedin = row.WebsiteURL;
