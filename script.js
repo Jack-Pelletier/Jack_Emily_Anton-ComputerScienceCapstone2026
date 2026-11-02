@@ -26,6 +26,48 @@ if (uploadForm) {
     }
   }
 
+  // One block of contact fields per team member, driven by the team size dropdown.
+  const teamSize = document.querySelector('#teamSize');
+  const teamMembers = document.querySelector('#teamMembers');
+  const memberTemplate = document.querySelector('#teamMemberTemplate');
+  const maxTeamMembers = 3;
+
+  for (let count = 1; count <= maxTeamMembers; count++) {
+    teamSize.append(new Option(count === 1 ? '1 person' : count + ' people', String(count)));
+  }
+
+  function renderTeamMembers() {
+    const count = Number(teamSize.value) || 1;
+    while (teamMembers.children.length > count) teamMembers.lastElementChild.remove();
+    while (teamMembers.children.length < count) {
+      const number = teamMembers.children.length + 1;
+      const block = memberTemplate.content.firstElementChild.cloneNode(true);
+      block.querySelector('.team-member-title').textContent = 'Team Member ' + number;
+      for (const input of block.querySelectorAll('[data-field]')) {
+        input.id = input.dataset.field + '_' + number;
+      }
+      for (const label of block.querySelectorAll('[data-for]')) {
+        label.htmlFor = label.dataset.for + '_' + number;
+      }
+      teamMembers.append(block);
+    }
+  }
+
+  function readTeamMembers() {
+    return Array.from(teamMembers.children).map((block) => {
+      const member = {};
+      for (const input of block.querySelectorAll('[data-field]')) {
+        member[input.dataset.field] = input.value.trim();
+      }
+      const hasInfo = Object.values(member).some(Boolean);
+      member.anonymous = block.querySelector('[data-anonymous]').checked;
+      return hasInfo ? member : null;
+    }).filter(Boolean);
+  }
+
+  teamSize.addEventListener('change', renderTeamMembers);
+  renderTeamMembers();
+
   fileInput.addEventListener('change', showFile);
   fileInput.addEventListener('invalid', () => {
     status.textContent = fileInput.validationMessage;
@@ -61,6 +103,7 @@ if (uploadForm) {
     if (submitButton.disabled) return;
 
     const formData = new FormData(uploadForm);
+    formData.append('contacts', JSON.stringify(readTeamMembers()));
     submitButton.disabled = true;
     submitButton.textContent = 'Submitting…';
     status.textContent = 'Uploading your project…';
@@ -77,6 +120,8 @@ if (uploadForm) {
       if (!response.ok) throw new Error(result.error || 'The project could not be submitted.');
 
       uploadForm.reset();
+      teamMembers.replaceChildren();
+      renderTeamMembers();
       showFile();
       status.textContent = result.message || 'Your project was submitted for faculty review.';
       status.className = 'status-success';
@@ -145,12 +190,34 @@ if (searchForm) {
           card.append(pdfLink);
         }
 
+        for (const person of project.Team || []) {
+          const details = [person.name, person.email, person.phone].filter(Boolean);
+          const line = document.createElement('p');
+          line.className = 'team-line';
+          line.append('Team member: ' + details.join(' | '));
+          for (const [label, url] of [['LinkedIn', person.linkedin], ['GitHub', person.github]]) {
+            if (!/^https?:\/\//i.test(url || '')) continue;
+            const link = document.createElement('a');
+            link.href = url;
+            link.textContent = label;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            line.append(' | ', link);
+          }
+          card.append(line);
+        }
+
         results.append(card);
       }
 
-      status.textContent = projects.length
-        ? projects.length + (projects.length === 1 ? ' project found.' : ' projects found.')
-        : 'No approved projects found.';
+      if (projects.length) {
+        status.textContent = projects.length + (projects.length === 1 ? ' project found.' : ' projects found.');
+      } else if (!searchInput.value.trim()) {
+        status.textContent = 'Capstone Street currently has no projects.';
+        status.className = 'status-error';
+      } else {
+        status.textContent = 'No projects match your search.';
+      }
     } catch (error) {
       status.textContent = error instanceof TypeError
         ? 'Could not reach the server. Please try searching again.'
