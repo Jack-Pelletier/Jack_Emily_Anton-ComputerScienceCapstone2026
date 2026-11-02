@@ -254,7 +254,7 @@ test('project edits atomically update metadata, approval, deduplicated tags, and
   assert.ok(calls.queries.some(query => /DELETE FROM ProjectKeywords/i.test(query.sql)));
   assert.ok(calls.queries.some(query => /DELETE[\s\S]*StudentWebsites/i.test(query.sql)));
   assert.ok(calls.queries.some(query => /DELETE FROM StudentInfo/i.test(query.sql)));
-  assert.ok(calls.queries.some(query => /INSERT INTO StudentInfo/i.test(query.sql) && /FALSE/i.test(query.sql)));
+  assert.ok(calls.queries.some(query => /INSERT INTO StudentInfo/i.test(query.sql) && query.values.at(-1) === false));
   assert.ok(calls.queries.some(query => /INSERT INTO StudentWebsites/i.test(query.sql) && query.values.includes('https://github.com/student')));
 });
 
