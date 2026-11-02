@@ -45,7 +45,8 @@ function createApp({ db, storage, bucket = 'project-pdfs', auth = null, trustPro
 
   // Only these public files are served. The server, SQL, and .env stay private.
   app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'Home.html')));
-  for (const file of ['Home.html', 'Projects.html', 'Upload.html', 'About.html', 'style.css', 'script.js', 'auth-ui.js']) {
+  for (const file of ['Home.html', 'Projects.html', 'Upload.html', 'About.html', 'style.css', 'script.js', 'auth-ui.js',
+    'admin-dashboard.js']) {
     app.get(`/${file}`, (req, res) => res.sendFile(path.join(__dirname, file)));
   }
   app.get('/AdminDashboard.html', facultyAuth.loadFaculty, facultyAuth.requirePage,
@@ -123,7 +124,7 @@ function createApp({ db, storage, bucket = 'project-pdfs', auth = null, trustPro
           WHERE pk.ProjectID = p.ProjectID) AS Keywords,
          (SELECT MIN(pdf.PDFID) FROM ProjectPDF pdf WHERE pdf.ProjectID = p.ProjectID) AS PDFID
        FROM Project p
-       WHERE p.Approved = TRUE AND
+       WHERE p.Approved = TRUE AND p.IsPublic = TRUE AND
          (p.ProjectName LIKE ? OR p.ProjectDescription LIKE ? OR p.Industry LIKE ? OR EXISTS (
            SELECT 1 FROM ProjectKeywords pk JOIN Keywords k ON k.KeywordID = pk.KeywordID
            WHERE pk.ProjectID = p.ProjectID AND k.KeywordName LIKE ?))
@@ -160,7 +161,7 @@ function createApp({ db, storage, bucket = 'project-pdfs', auth = null, trustPro
     const [files] = await db.execute(
       `SELECT pdf.PDFBucket, pdf.PDFPath FROM ProjectPDF pdf
        JOIN Project p ON p.ProjectID = pdf.ProjectID
-       WHERE p.ProjectID = ? AND (p.Approved = TRUE OR ? = TRUE)
+       WHERE p.ProjectID = ? AND ((p.Approved = TRUE AND p.IsPublic = TRUE) OR ? = TRUE)
        ORDER BY pdf.PDFID LIMIT 1`, [projectId(req.params.id), Boolean(req.faculty)]
     );
     if (!files.length) return res.status(404).json({ error: 'PDF not found.' });
@@ -221,7 +222,7 @@ async function start() {
     database: env.DB_NAME, connectionLimit: 5, charset: 'utf8mb4'
   });
   try {
-    await db.execute('SELECT Industry, Approved FROM Project LIMIT 0');
+    await db.execute('SELECT Industry, Approved, IsPublic FROM Project LIMIT 0');
     await db.execute('SELECT AccountID, Email, NormalizedEmail FROM FacultyAccount LIMIT 0');
     await db.execute('SELECT CleanupID, PDFBucket, PDFPath FROM PDFCleanup LIMIT 0');
   } catch (error) {

@@ -176,7 +176,13 @@ test('a faculty email match rotates the session and grants access without writin
   const html = await dashboard.text();
   assert.match(html, /<header[\s>]/i);
   assert.match(html, /<nav[\s>]/i);
-  assert.match(html, /<main\b[^>]*>\s*(?:<!--[\s\S]*?-->\s*)?<\/main>/i);
+  assert.match(html, /<main\b[^>]*data-admin-page/i);
+  for (const id of ['addUserForm', 'userSearch', 'adminProjectSearchForm', 'adminProjectList', 'requestList', 'requestDialog']) {
+    assert.ok(html.includes(`id="${id}"`));
+  }
+  for (const asset of ['/admin-dashboard.js', '/style.css']) {
+    assert.equal((await fixture.request(asset)).status, 200);
+  }
   assert.equal((await fixture.request('/api/admin/projects', { headers: { Cookie: pendingCookie } })).status, 401);
 });
 

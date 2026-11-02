@@ -226,7 +226,7 @@ test('storage failure rolls back and attempts cleanup without exposing provider 
   assert.equal(calls.queries.some(query => query.sql.includes('INSERT INTO ProjectPDF')), false);
 });
 
-test('public search requests approved projects with parameterized search and no contact fields', async t => {
+test('public search requests approved public projects with parameterized search and no contact fields', async t => {
   const keywords = Array.from({ length: 20 }, (_, i) => `Topic ${String(i).padStart(2, '0')} ${'x'.repeat(70)}`);
   const expectedKeywords = keywords.join(', ');
   const project = { ProjectID: 42, ProjectName: 'Street Map', ProjectDescription: 'Mapping', Industry: 'Education', Keywords: [...keywords].reverse(), PDFID: 1 };
@@ -237,7 +237,7 @@ test('public search requests approved projects with parameterized search and no 
         assert.deepEqual(values, [42]);
         return [{ StudentID: 1, ProjectID: 42, StudentName: 'Ben', StudentEmail: 'ben@example.com', StudentPhoneNumber: null, WebsiteName: 'GitHub', WebsiteURL: 'https://github.com/ben' }];
       }
-      assert.match(sql, /WHERE p\.Approved = TRUE AND/);
+      assert.match(sql, /WHERE p\.Approved = TRUE AND p\.IsPublic = TRUE AND/);
       assert.match(sql, /JSON_ARRAYAGG/);
       assert.doesNotMatch(sql, /StudentInfo|StudentEmail|StudentPhoneNumber|SELECT \*/);
       assert.deepEqual(values, Array(4).fill("%maps' OR 1=1 --%"));
@@ -249,6 +249,31 @@ test('public search requests approved projects with parameterized search and no 
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.ok(expectedKeywords.length > 1024);
   assert.deepEqual(await response.json(), [{ ...project, Keywords: expectedKeywords, Team: [{ name: 'Ben', email: 'ben@example.com', phone: '', linkedin: '', github: 'https://github.com/ben' }] }]);
+});
+
+test('public search excludes approved private projects and unapproved public projects', async t => {
+  const projects = [
+    { ProjectID: 42, Approved: true, IsPublic: false, ProjectName: 'Private approved project', Keywords: [] },
+    { ProjectID: 43, Approved: false, IsPublic: true, ProjectName: 'Pending project', Keywords: [] },
+    { ProjectID: 44, Approved: true, IsPublic: true, ProjectName: 'Public approved project', Keywords: [] }
+  ];
+  const { request, signIn } = await setup(t, {
+    read(sql, values) {
+      if (/FROM StudentInfo/.test(sql)) {
+        assert.deepEqual(values, [44]);
+        return [];
+      }
+      assert.match(sql, /WHERE p\.Approved = TRUE AND p\.IsPublic = TRUE AND/);
+      return projects.filter(project => project.Approved && project.IsPublic)
+        .map(({ Approved, IsPublic, ...project }) => project);
+    }
+  });
+  // The public endpoint stays public-only even when visited by faculty.
+  for (const headers of [{}, await signIn()]) {
+    const response = await request('/api/projects', { headers });
+    assert.equal(response.status, 200);
+    assert.deepEqual((await response.json()).map(project => project.ProjectID), [44]);
+  }
 });
 
 test('faculty routes require a faculty session before reading or changing data', async t => {
@@ -270,7 +295,7 @@ test('faculty access is disabled when login is not configured', async t => {
   assert.deepEqual(calls.queries, []);
 });
 
-test('approval accepts a boolean and updates only the requested project', async t => {
+test('approval accepts a boolean and publishes only the requested project', async t => {
   const { calls, request, signIn } = await setup(t, { read: () => ({ affectedRows: 1 }) });
   const headers = { ...await signIn(), 'Content-Type': 'application/json' };
   const invalid = await request('/api/admin/projects/42', { method: 'PATCH', headers, body: JSON.stringify({ approved: 'true' }) });
@@ -278,13 +303,13 @@ test('approval accepts a boolean and updates only the requested project', async 
   assert.deepEqual(calls.queries, []);
   const approved = await request('/api/admin/projects/42', { method: 'PATCH', headers, body: JSON.stringify({ approved: true }) });
   assert.equal(approved.status, 200);
-  assert.deepEqual(calls.queries[0], { sql: 'UPDATE Project SET Approved = ? WHERE ProjectID = ?', values: [true, 42] });
+  assert.deepEqual(calls.queries[0], { sql: 'UPDATE Project SET Approved = ?, IsPublic = ? WHERE ProjectID = ?', values: [true, true, 42] });
 });
 
-test('approved PDFs redirect to short-lived signed URLs', async t => {
+test('approved public PDFs redirect to short-lived signed URLs', async t => {
   const { calls, request } = await setup(t, {
     read(sql, values) {
-      assert.match(sql, /p\.Approved = TRUE OR \? = TRUE/);
+      assert.match(sql, /\(\(p\.Approved = TRUE AND p\.IsPublic = TRUE\) OR \? = TRUE\)/);
       assert.deepEqual(values, [42, false]);
       return [{ PDFBucket: 'project-pdfs', PDFPath: '42/file.pdf' }];
     }
@@ -293,6 +318,22 @@ test('approved PDFs redirect to short-lived signed URLs', async t => {
   assert.equal(response.status, 302);
   assert.equal(response.headers.get('location'), 'https://storage.example.com/project.pdf?token=temporary');
   assert.deepEqual(calls.signed, [{ bucket: 'project-pdfs', path: '42/file.pdf', seconds: 60 }]);
+});
+
+test('approved private PDFs are hidden from anonymous visitors and remain accessible to faculty', async t => {
+  const { calls, request, signIn } = await setup(t, {
+    read(sql, values) {
+      assert.match(sql, /\(\(p\.Approved = TRUE AND p\.IsPublic = TRUE\) OR \? = TRUE\)/);
+      assert.equal(values[0], 42);
+      return values[1] ? [{ PDFBucket: 'project-pdfs', PDFPath: '42/private.pdf' }] : [];
+    }
+  });
+  const anonymous = await request('/api/projects/42/pdf', { redirect: 'manual' });
+  assert.equal(anonymous.status, 404);
+  assert.deepEqual(calls.signed, []);
+  const faculty = await request('/api/projects/42/pdf', { headers: await signIn(), redirect: 'manual' });
+  assert.equal(faculty.status, 302);
+  assert.deepEqual(calls.signed, [{ bucket: 'project-pdfs', path: '42/private.pdf', seconds: 60 }]);
 });
 
 test('pending PDFs are hidden publicly and accessible to faculty', async t => {

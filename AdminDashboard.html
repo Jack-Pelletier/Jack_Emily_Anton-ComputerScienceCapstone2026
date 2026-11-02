@@ -9,6 +9,7 @@
 
   <link rel="stylesheet" href="style.css">
   <script src="/auth-ui.js" defer></script>
+  <script src="/admin-dashboard.js" defer></script>
 </head>
 
 <body>
@@ -43,7 +44,164 @@
 
 
   <!-- MAIN CONTENT -->
-  <main aria-label="Admin Dashboard" data-admin-page></main>
+  <main class="admin-dashboard" aria-label="Admin Dashboard" data-admin-page>
+    <div class="admin-intro">
+      <h1>Admin Dashboard</h1>
+    </div>
+
+    <p id="dashboardStatus" class="admin-status" role="status" aria-live="polite"></p>
+
+    <div class="admin-grid">
+      <section class="admin-panel admin-users" aria-labelledby="usersHeading">
+        <div class="admin-panel-heading">
+          <h2 id="usersHeading">User Management</h2>
+        </div>
+        <p class="admin-panel-note">Add and manage faculty administrators.</p>
+
+        <form id="addUserForm" class="admin-add-user" novalidate>
+          <label class="admin-field-label" for="facultyEmail">Add faculty by email</label>
+          <div class="admin-input-row">
+            <input id="facultyEmail" class="admin-input" type="email" maxlength="100"
+                   placeholder="faculty@merrimack.edu" autocomplete="email" aria-describedby="userActionStatus" required>
+            <button class="admin-button" type="submit" disabled>Add</button>
+          </div>
+          <p id="userActionStatus" class="admin-status" role="status" aria-live="polite"></p>
+        </form>
+
+        <label class="admin-field-label" for="userSearch">Search faculty users</label>
+        <input id="userSearch" class="admin-input" type="search" placeholder="Search by email…">
+        <p id="usersStatus" class="admin-status" role="status" aria-live="polite">Loading faculty users…</p>
+        <ul id="userList" class="admin-user-list" aria-label="Faculty administrators" aria-busy="true"></ul>
+        <p class="admin-panel-footnote">Faculty users have administrator access. Your own account cannot be deleted.</p>
+      </section>
+
+      <section class="admin-panel admin-projects" aria-labelledby="projectsHeading">
+        <div class="admin-panel-heading">
+          <h2 id="projectsHeading">Projects</h2>
+          <span id="projectCount" class="admin-count" aria-label="Project count">—</span>
+        </div>
+        <p class="admin-panel-note">Browse approved projects and manage their visibility.</p>
+        <form id="adminProjectSearchForm" class="admin-search-form" role="search">
+          <label class="admin-field-label" for="adminProjectSearch">Search projects</label>
+          <div class="admin-input-row">
+            <input id="adminProjectSearch" class="admin-input" type="search" maxlength="200"
+                   placeholder="Search title, industry, or keyword…">
+            <button class="admin-button" type="submit">Search</button>
+          </div>
+        </form>
+        <p id="adminProjectsStatus" class="admin-status" role="status" aria-live="polite">Loading projects…</p>
+        <div id="adminProjectList" class="admin-project-list" role="region" aria-label="Project results"
+             tabindex="0" aria-busy="true"></div>
+      </section>
+
+      <section class="admin-panel admin-requests" aria-labelledby="requestsHeading">
+        <div class="admin-panel-heading">
+          <h2 id="requestsHeading">Pending Requests</h2>
+          <span id="requestCount" class="admin-count" aria-label="Pending request count">—</span>
+        </div>
+        <p class="admin-panel-note">Select a submission to review its details.</p>
+        <p id="requestsStatus" class="admin-status" role="status" aria-live="polite">Loading requests…</p>
+        <ul id="requestList" class="admin-request-list" aria-label="Pending project requests" aria-busy="true"></ul>
+        <p class="admin-panel-footnote">Accepted projects appear publicly.</p>
+      </section>
+    </div>
+    <noscript><p class="status-error">Enable JavaScript to manage users and review projects.</p></noscript>
+  </main>
+
+  <dialog id="requestDialog" class="admin-dialog" aria-labelledby="requestTitle">
+    <div class="admin-dialog-heading">
+      <p id="requestEyebrow" class="admin-eyebrow">Pending request</p>
+      <h2 id="requestTitle" tabindex="-1">Project details</h2>
+      <button id="closeRequest" class="admin-dialog-close" type="button" aria-label="Close project details">&times;</button>
+    </div>
+    <div class="admin-dialog-content">
+      <p id="requestStatus" class="admin-status" role="status" aria-live="polite"></p>
+      <div id="requestDetails"></div>
+      <form id="projectEditForm" class="admin-edit-form" hidden novalidate>
+        <p id="projectEditStatus" class="admin-status" role="status" aria-live="polite"></p>
+        <div id="projectManagement" class="admin-project-management">
+          <div class="admin-visibility-row">
+            <label class="admin-switch">
+              <input id="projectPublic" type="checkbox" role="switch" aria-describedby="projectVisibilityHint">
+              <span class="admin-switch-track" aria-hidden="true"></span>
+              <span>Public project</span>
+            </label>
+            <p id="projectVisibilityHint" class="admin-panel-note"></p>
+          </div>
+        </div>
+        <div class="admin-edit-field">
+          <label for="editProjectTitle">Project title</label>
+          <input id="editProjectTitle" class="admin-input" name="projectTitle" maxlength="500" required>
+        </div>
+        <div class="admin-edit-field">
+          <label for="editProjectAbstract">Project abstract</label>
+          <textarea id="editProjectAbstract" class="admin-input" name="projectAbstract" rows="6" maxlength="2000" required></textarea>
+        </div>
+        <div class="admin-edit-field">
+          <label for="editProjectIndustry">Industry</label>
+          <input id="editProjectIndustry" class="admin-input" name="projectIndustry" maxlength="100">
+        </div>
+        <div class="admin-edit-field">
+          <label for="editProjectTags">Keywords</label>
+          <input id="editProjectTags" class="admin-input" name="projectTags" maxlength="2099" aria-describedby="editTagsHint">
+          <p id="editTagsHint" class="admin-field-hint">Separate keywords with commas. Use up to 20 keywords.</p>
+        </div>
+        <div class="admin-edit-field admin-pdf-replacement">
+          <label for="editProjectPdf">Replace project PDF</label>
+          <div id="currentProjectPdf" class="admin-current-pdf"></div>
+          <input id="editProjectPdf" class="admin-file-input" type="file" name="projectFile"
+                 accept=".pdf,application/pdf" aria-describedby="projectPdfHint projectPdfStatus">
+          <p id="projectPdfHint" class="admin-field-hint">PDF only, up to 10 MB. A selected file replaces the current PDF when you save changes.</p>
+          <p id="projectPdfStatus" class="admin-status" role="status" aria-live="polite"></p>
+          <button id="clearProjectPdf" class="admin-text-button" type="button" hidden>Keep current PDF</button>
+        </div>
+        <div>
+          <h3>Team members</h3>
+          <p class="admin-field-hint">Choose which contact details visitors can see when the project is public.</p>
+        </div>
+        <div id="editContacts"></div>
+        <div class="admin-edit-form-controls">
+          <button id="addProjectContact" class="admin-button admin-button-secondary" type="button">Add Team Member</button>
+        </div>
+      </form>
+    </div>
+    <div id="projectActions" class="admin-dialog-actions" hidden>
+      <p id="projectActionNote" class="admin-decision-note" hidden></p>
+      <div class="admin-decision-buttons">
+        <button id="cancelProjectAction" class="admin-button admin-button-secondary" type="button" hidden>Cancel</button>
+        <button id="deleteProject" class="admin-button admin-button-danger" type="button">Delete Project</button>
+        <button id="editProject" class="admin-button" type="button">Edit Project</button>
+        <button id="saveProject" class="admin-button" type="submit" form="projectEditForm" hidden>Save Changes</button>
+      </div>
+    </div>
+    <div id="requestActions" class="admin-dialog-actions" hidden>
+      <p id="requestDecisionNote" class="admin-decision-note">Accept to publish this project. Denying permanently deletes the submission and its PDF.</p>
+      <div class="admin-decision-buttons">
+        <button id="cancelDenyRequest" class="admin-button admin-button-secondary" type="button" hidden>Cancel</button>
+        <button id="denyRequest" class="admin-button admin-button-danger" type="button">Deny Request</button>
+        <button id="acceptRequest" class="admin-button" type="button">Accept Request</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="deleteUserDialog" class="admin-dialog admin-confirm-dialog" aria-labelledby="deleteUserTitle"
+          aria-describedby="deleteUserMessage">
+    <div class="admin-dialog-heading">
+      <p class="admin-eyebrow">User management</p>
+      <h2 id="deleteUserTitle">Delete faculty user?</h2>
+      <button id="closeDeleteUser" class="admin-dialog-close" type="button" aria-label="Cancel user deletion">&times;</button>
+    </div>
+    <div class="admin-dialog-content">
+      <p id="deleteUserMessage"></p>
+      <p id="deleteUserStatus" class="admin-status" role="status" aria-live="polite"></p>
+    </div>
+    <div class="admin-dialog-actions">
+      <div class="admin-decision-buttons">
+        <button id="cancelDeleteUser" class="admin-button admin-button-secondary" type="button" autofocus>Cancel</button>
+        <button id="confirmDeleteUser" class="admin-button admin-button-danger" type="button">Delete User</button>
+      </div>
+    </div>
+  </dialog>
 
 
   <!-- CAPSTONE STREET FOOTER -->

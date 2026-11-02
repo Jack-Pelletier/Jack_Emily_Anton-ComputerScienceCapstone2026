@@ -7,7 +7,7 @@ const { createApp } = require('../server');
 const pdf = Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF');
 const project = {
   ProjectID: 42, ProjectName: 'Campus map', ProjectDescription: 'Find campus buildings.',
-  Industry: 'Education', Approved: 0, Keywords: ['Maps', 'Campus'], PDFID: 5
+  Industry: 'Education', Approved: 0, IsPublic: 1, Keywords: ['Maps', 'Campus'], PDFID: 5
 };
 const storedPdf = {
   PDFID: 5, ProjectID: 42, PDFBucket: 'project-pdfs', PDFPath: '42/previous.pdf',
@@ -170,6 +170,7 @@ test('admin listing supports pending, approved, and all with parameterized searc
       const body = await response.json();
       assert.equal(body[0].ProjectID, 42);
       assert.equal(body[0].Approved, false);
+      assert.equal(body[0].IsPublic, true);
       assert.equal(body[0].Keywords, 'Campus, Maps');
       assert.equal(response.headers.get('cache-control'), 'no-store');
       const query = calls.queries.at(-1);
@@ -180,6 +181,25 @@ test('admin listing supports pending, approved, and all with parameterized searc
       if (status === 'all') assert.doesNotMatch(query.sql, /Approved\s*=/i);
     });
   }
+});
+
+test('approved admin listings include private projects alongside public projects', async t => {
+  const { request, signIn } = await setup(t, {
+    read(sql) {
+      assert.match(sql, /WHERE p\.Approved = TRUE AND/);
+      assert.doesNotMatch(sql, /IsPublic\s*=/);
+      return [
+        { ...project, Approved: 1, IsPublic: 0 },
+        { ...project, ProjectID: 43, Approved: 1, IsPublic: 1 }
+      ];
+    }
+  });
+  const response = await request('/api/admin/projects?status=approved', { headers: await signIn() });
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).map(({ ProjectID, Approved, IsPublic }) => ({ ProjectID, Approved, IsPublic })), [
+    { ProjectID: 42, Approved: true, IsPublic: false },
+    { ProjectID: 43, Approved: true, IsPublic: true }
+  ]);
 });
 
 test('project filters and IDs reject malformed inputs before queries', async t => {
@@ -200,6 +220,7 @@ test('project details include editable tags, private contacts, and PDF metadata'
   const body = await response.json();
   assert.equal(body.ProjectID, 42);
   assert.equal(body.Approved, false);
+  assert.equal(body.IsPublic, true);
   assert.deepEqual(body.keywords, ['Campus', 'Maps']);
   assert.equal(body.contacts.length, 1);
   assert.equal(body.contacts[0].StudentID, 7);
@@ -216,6 +237,7 @@ test('project edits validate every supplied field before a transaction', async t
   const invalid = [null, [], {}, { unexpected: true }, { projectTitle: '' },
     { projectTitle: 'x'.repeat(501) }, { projectAbstract: '  ' }, { projectAbstract: 'x'.repeat(2001) },
     { projectIndustry: 'x'.repeat(101) }, { projectIndustry: null }, { approved: 'true' },
+    { isPublic: 'true' }, { isPublic: 1 }, { isPublic: null }, { approved: true, isPublic: 'false' },
     { projectTags: ['Maps'] }, { projectTags: Array.from({ length: 21 }, (_, i) => `tag${i}`).join(',') },
     { contacts: {} }, { contacts: [null] }, { contacts: [{ unexpected: 'value' }] },
     { contacts: Array.from({ length: 21 }, () => ({ contactName: 'Student' })) },
@@ -233,6 +255,51 @@ test('project edits validate every supplied field before a transaction', async t
   assert.deepEqual(calls.queries, []);
 });
 
+test('visibility edits change only IsPublic and preserve approval and related data', async t => {
+  for (const isPublic of [true, false]) {
+    await t.test(isPublic ? 'public' : 'private', async t => {
+      const { request, signIn, calls } = await setup(t);
+      const response = await request('/api/admin/projects/42', {
+        method: 'PATCH', headers: { ...await signIn(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPublic })
+      });
+      assert.equal(response.status, 200);
+      const writes = calls.queries.filter(query => /^(UPDATE|INSERT|DELETE)\b/i.test(query.sql));
+      assert.deepEqual(writes, [{ sql: 'UPDATE Project SET IsPublic = ? WHERE ProjectID = ?', values: [isPublic, 42] }]);
+      assert.deepEqual(calls.events, ['begin', 'commit', 'release']);
+      assert.deepEqual(calls.uploads, []);
+      assert.deepEqual(calls.removals, []);
+    });
+  }
+});
+
+test('explicit visibility takes precedence when approving a project', async t => {
+  for (const isPublic of [true, false]) {
+    await t.test(isPublic ? 'public' : 'private', async t => {
+      const { request, signIn, calls } = await setup(t);
+      const response = await request('/api/admin/projects/42', {
+        method: 'PATCH', headers: { ...await signIn(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved: true, isPublic })
+      });
+      assert.equal(response.status, 200);
+      const update = calls.queries.find(query => /^UPDATE Project\b/i.test(query.sql));
+      assert.deepEqual(update, {
+        sql: 'UPDATE Project SET Approved = ?, IsPublic = ? WHERE ProjectID = ?', values: [true, isPublic, 42]
+      });
+    });
+  }
+});
+
+test('withdrawing approval leaves the independent visibility setting unchanged', async t => {
+  const { request, signIn, calls } = await setup(t);
+  const response = await request('/api/admin/projects/42', {
+    method: 'PATCH', headers: { ...await signIn(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ approved: false })
+  });
+  assert.equal(response.status, 200);
+  assert.deepEqual(calls.queries, [{ sql: 'UPDATE Project SET Approved = ? WHERE ProjectID = ?', values: [false, 42] }]);
+});
+
 test('project edits atomically update metadata, approval, deduplicated tags, and contacts', async t => {
   const { request, signIn, calls } = await setup(t);
   const headers = { ...await signIn(), 'Content-Type': 'application/json' };
@@ -248,6 +315,7 @@ test('project edits atomically update metadata, approval, deduplicated tags, and
   assert.ok(update.values.includes('Updated abstract'));
   assert.ok(update.values.includes(null));
   assert.ok(update.values.includes(true));
+  assert.match(update.sql, /Approved = \?, IsPublic = \?/);
   assert.equal(update.values.at(-1), 42);
   const keywords = calls.queries.filter(query => /INSERT INTO Keywords/i.test(query.sql));
   assert.deepEqual(keywords.map(query => query.values[0].toLowerCase()), ['maps', 'education']);
@@ -335,6 +403,64 @@ test('a failed project deletion rolls back without deleting PDF storage', async 
   const response = await request('/api/admin/projects/42', { method: 'DELETE', headers: await signIn() });
   assert.equal(response.status, 500);
   assert.deepEqual(calls.events, ['begin', 'rollback', 'release']);
+  assert.deepEqual(calls.removals, []);
+});
+
+test('pending-only deletion cannot deny a project approved after its details were opened', async t => {
+  let approved = false;
+  const { request, signIn, calls, cleanup } = await setup(t, {
+    read(sql) {
+      if (/^\s*SELECT[\s\S]*FROM Project\b/i.test(sql)) return [{ ...project, Approved: approved }];
+    }
+  });
+  const headers = await signIn();
+  const detail = await request('/api/admin/projects/42', { headers });
+  assert.equal((await detail.json()).Approved, false);
+  approved = true;
+  calls.queries.length = 0;
+  calls.events.length = 0;
+
+  const response = await request('/api/admin/projects/42?pendingOnly=true', { method: 'DELETE', headers });
+  assert.equal(response.status, 409);
+  assert.match((await response.json()).error, /already been approved/);
+  assert.equal(calls.queries.length, 1);
+  assert.match(calls.queries[0].sql, /SELECT ProjectID, Approved FROM Project.*FOR UPDATE$/);
+  assert.deepEqual(calls.events, ['begin', 'rollback', 'release']);
+  assert.deepEqual(calls.removals, []);
+  assert.deepEqual(cleanup, []);
+});
+
+test('pending-only deletion removes a still-pending submission and its PDF', async t => {
+  const { request, signIn, calls } = await setup(t);
+  const response = await request('/api/admin/projects/42?pendingOnly=true', {
+    method: 'DELETE', headers: await signIn()
+  });
+  assert.equal(response.status, 200);
+  assert.ok(calls.queries.some(query => /^DELETE FROM Project WHERE/i.test(query.sql)));
+  assert.ok(calls.events.indexOf('commit') < calls.events.indexOf('remove'));
+  assert.deepEqual(calls.removals, [{ bucket: 'project-pdfs', paths: ['42/previous.pdf'] }]);
+});
+
+test('ordinary deletion continues to support approved projects', async t => {
+  const { request, signIn, calls } = await setup(t, {
+    read(sql) {
+      if (/^\s*SELECT[\s\S]*FROM Project\b/i.test(sql)) return [{ ...project, Approved: true }];
+    }
+  });
+  const response = await request('/api/admin/projects/42', { method: 'DELETE', headers: await signIn() });
+  assert.equal(response.status, 200);
+  assert.ok(calls.queries.some(query => /^DELETE FROM Project WHERE/i.test(query.sql)));
+});
+
+test('invalid pending-only deletion filters fail before database or storage access', async t => {
+  const { request, signIn, calls } = await setup(t);
+  const headers = await signIn();
+  for (const query of ['pendingOnly=false', 'pendingOnly=1', 'pendingOnly=', 'pendingOnly=true&pendingOnly=true']) {
+    const response = await request(`/api/admin/projects/42?${query}`, { method: 'DELETE', headers });
+    assert.equal(response.status, 400, query);
+  }
+  assert.deepEqual(calls.queries, []);
+  assert.equal(calls.connections, 0);
   assert.deepEqual(calls.removals, []);
 });
 

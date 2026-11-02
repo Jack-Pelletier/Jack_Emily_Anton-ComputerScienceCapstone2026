@@ -3,7 +3,7 @@ const { badRequest, readText, projectId, readKeywords, readContact, contactField
   validatePdf, saveKeywords, saveContact } = require('./project-data');
 const { queuePdfCleanup, cleanupPending } = require('./pdf-cleanup');
 
-const projectSelection = `SELECT p.ProjectID, p.ProjectName, p.ProjectDescription, p.Industry, p.Approved,
+const projectSelection = `SELECT p.ProjectID, p.ProjectName, p.ProjectDescription, p.Industry, p.Approved, p.IsPublic,
   (SELECT JSON_ARRAYAGG(k.KeywordName) FROM ProjectKeywords pk
    JOIN Keywords k ON k.KeywordID = pk.KeywordID WHERE pk.ProjectID = p.ProjectID) AS Keywords,
   (SELECT MIN(pdf.PDFID) FROM ProjectPDF pdf WHERE pdf.ProjectID = p.ProjectID) AS PDFID
@@ -12,11 +12,11 @@ const projectSelection = `SELECT p.ProjectID, p.ProjectName, p.ProjectDescriptio
 function formatProject(project) {
   const keywords = (typeof project.Keywords === 'string' ? JSON.parse(project.Keywords) : project.Keywords) || [];
   keywords.sort((a, b) => a.localeCompare(b));
-  return { ...project, Approved: Boolean(project.Approved), Keywords: keywords.join(', ') };
+  return { ...project, Approved: Boolean(project.Approved), IsPublic: Boolean(project.IsPublic), Keywords: keywords.join(', ') };
 }
 
 function validatePatch(body) {
-  const allowed = ['projectTitle', 'projectAbstract', 'projectIndustry', 'projectTags', 'approved', 'contacts'];
+  const allowed = ['projectTitle', 'projectAbstract', 'projectIndustry', 'projectTags', 'approved', 'isPublic', 'contacts'];
   if (!body || Array.isArray(body) || typeof body !== 'object' || !Object.keys(body).length ||
       Object.keys(body).some(key => !allowed.includes(key))) throw badRequest('Send one or more supported project fields.');
   const updates = [];
@@ -29,6 +29,12 @@ function validatePatch(body) {
   if (Object.hasOwn(body, 'approved')) {
     if (typeof body.approved !== 'boolean') throw badRequest('approved must be true or false.');
     updates.push(['Approved', body.approved]);
+    // Accepting publishes the submission unless this same edit explicitly makes it private.
+    if (body.approved && !Object.hasOwn(body, 'isPublic')) updates.push(['IsPublic', true]);
+  }
+  if (Object.hasOwn(body, 'isPublic')) {
+    if (typeof body.isPublic !== 'boolean') throw badRequest('isPublic must be true or false.');
+    updates.push(['IsPublic', body.isPublic]);
   }
   const keywords = Object.hasOwn(body, 'projectTags') ? readKeywords(body) : undefined;
   let contacts;
@@ -47,8 +53,9 @@ function validatePatch(body) {
 }
 
 async function lockProject(connection, id) {
-  const [projects] = await connection.execute('SELECT ProjectID FROM Project WHERE ProjectID = ? FOR UPDATE', [id]);
+  const [projects] = await connection.execute('SELECT ProjectID, Approved FROM Project WHERE ProjectID = ? FOR UPDATE', [id]);
   if (!projects.length) throw Object.assign(new Error('Project not found.'), { status: 404 });
+  return projects[0];
 }
 
 async function deleteContacts(connection, id) {
@@ -121,7 +128,10 @@ function installAdminProjectRoutes(app, { db, storage, bucket, upload }) {
     const { updates, keywords, contacts } = validatePatch(req.body);
     // Keep the existing approval API, including its response, for frontend callers.
     if (Object.keys(req.body).length === 1 && Object.hasOwn(req.body, 'approved')) {
-      const [result] = await db.execute('UPDATE Project SET Approved = ? WHERE ProjectID = ?', [req.body.approved, id]);
+      const [result] = await db.execute(
+        `UPDATE Project SET ${updates.map(([column]) => `${column} = ?`).join(', ')} WHERE ProjectID = ?`,
+        [...updates.map(([, value]) => value), id]
+      );
       if (!result.affectedRows) return res.status(404).json({ error: 'Project not found.' });
       return res.json({ message: req.body.approved ? 'Project approved.' : 'Project hidden from public view.' });
     }
@@ -145,8 +155,13 @@ function installAdminProjectRoutes(app, { db, storage, bucket, upload }) {
 
   app.delete('/api/admin/projects/:id', async (req, res) => {
     const id = projectId(req.params.id);
+    const pendingOnly = req.query.pendingOnly;
+    if (pendingOnly !== undefined && pendingOnly !== 'true') throw badRequest('pendingOnly must be true when supplied.');
     const files = await transaction(db, async connection => {
-      await lockProject(connection, id);
+      const project = await lockProject(connection, id);
+      if (pendingOnly === 'true' && project.Approved) {
+        throw Object.assign(new Error('This request has already been approved. Refresh the dashboard to see its current status.'), { status: 409 });
+      }
       const [files] = await connection.execute('SELECT PDFBucket, PDFPath FROM ProjectPDF WHERE ProjectID = ?', [id]);
       await queuePdfCleanup(connection, files);
       await deleteContacts(connection, id);
