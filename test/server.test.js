@@ -128,12 +128,30 @@ test('optional contacts stay private and duplicate keywords are stored once', as
   assert.equal(keywords.length, 2);
   assert.deepEqual(keywords.map(query => query.values[0].toLowerCase()), ['javascript', 'maps']);
   const contact = calls.queries.find(query => query.sql.includes('INSERT INTO StudentInfo'));
-  assert.match(contact.sql, /FALSE/);
-  assert.deepEqual(contact.values, [42, 'Student', 'student@example.com', '555-123-4567']);
+  assert.deepEqual(contact.values, [42, 'Student', 'student@example.com', '555-123-4567', false]);
   const websites = calls.queries.filter(query => query.sql.includes('INSERT INTO StudentWebsites'));
   assert.deepEqual(websites.map(query => query.values), [
     [7, 'LinkedIn', 'https://linkedin.com/in/student'], [7, 'GitHub', 'https://github.com/student']
   ]);
+});
+
+test('every team member is saved as a private contact', async t => {
+  const { calls, request } = await setup(t);
+  const members = [
+    { contactName: 'Ana', contactEmail: 'ana@example.com', anonymous: true },
+    { contactName: 'Ben', contactGithub: 'github.com/ben', anonymous: false }
+  ];
+  const response = await request('/api/projects', {
+    method: 'POST', body: submission({ contacts: JSON.stringify(members) })
+  });
+  assert.equal(response.status, 201);
+  const students = calls.queries.filter(query => query.sql.includes('INSERT INTO StudentInfo'));
+  assert.deepEqual(students.map(query => query.values[1]), ['Ana', 'Ben']);
+  assert.deepEqual(students.map(query => query.values[4]), [false, true]);
+  const bad = await request('/api/projects', {
+    method: 'POST', body: submission({ contacts: JSON.stringify([{ contactEmail: 'invalid' }]) })
+  });
+  assert.equal(bad.status, 400);
 });
 
 test('invalid submissions are rejected before database or storage writes', async t => {
@@ -214,6 +232,11 @@ test('public search requests approved projects with parameterized search and no 
   const project = { ProjectID: 42, ProjectName: 'Street Map', ProjectDescription: 'Mapping', Industry: 'Education', Keywords: [...keywords].reverse(), PDFID: 1 };
   const { request } = await setup(t, {
     read(sql, values) {
+      if (/FROM StudentInfo/.test(sql)) {
+        assert.match(sql, /StudentInfoPublic = TRUE/);
+        assert.deepEqual(values, [42]);
+        return [{ StudentID: 1, ProjectID: 42, StudentName: 'Ben', StudentEmail: 'ben@example.com', StudentPhoneNumber: null, WebsiteName: 'GitHub', WebsiteURL: 'https://github.com/ben' }];
+      }
       assert.match(sql, /WHERE p\.Approved = TRUE AND/);
       assert.match(sql, /JSON_ARRAYAGG/);
       assert.doesNotMatch(sql, /StudentInfo|StudentEmail|StudentPhoneNumber|SELECT \*/);
@@ -225,7 +248,7 @@ test('public search requests approved projects with parameterized search and no 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.ok(expectedKeywords.length > 1024);
-  assert.deepEqual(await response.json(), [{ ...project, Keywords: expectedKeywords }]);
+  assert.deepEqual(await response.json(), [{ ...project, Keywords: expectedKeywords, Team: [{ name: 'Ben', email: 'ben@example.com', phone: '', linkedin: '', github: 'https://github.com/ben' }] }]);
 });
 
 test('faculty routes require a faculty session before reading or changing data', async t => {
