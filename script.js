@@ -234,4 +234,68 @@ if (searchForm) {
   });
 
   loadProjects();
+
+  // Display featured projects on the homepage
+const featuredProjectCards = document.querySelectorAll('.featured-project');
+
+if (featuredProjectCards.length > 0) {
+
+  async function loadFeaturedProjects() {
+
+    try {
+
+      const response = await fetch('/api/projects?search=');
+
+      if (!response.ok) {
+        throw new Error('Failed to retrieve featured projects');
+      }
+
+      const projects = await response.json();
+
+      // Display up to three projects
+      const featuredProjects = projects.slice(0, 3);
+
+      featuredProjectCards.forEach((card, index) => {
+
+        const project = featuredProjects[index];
+
+        const title = card.querySelector('h2');
+        const description = card.querySelector('p');
+
+        if (!project) {
+          title.textContent = '';
+          description.textContent = '';
+          return;
+        }
+
+        // Project title
+        title.textContent = project.ProjectName || '';
+
+        // Project description
+        const fullDescription = project.ProjectDescription || '';
+
+        // Shorten long descriptions
+        description.textContent = fullDescription.length > 120
+          ? fullDescription.substring(0, 120).trimEnd() + '...'
+          : fullDescription;
+
+      });
+
+    } catch (error) {
+
+      console.error('Error loading featured projects:', error);
+
+    }
+
+  }
+
+  loadFeaturedProjects();
+
+  console.log("Script.js is running");
+
+const featuredCardsTest = document.querySelectorAll('.featured-project');
+
+console.log("Featured project cards found:", featuredCardsTest.length);
+
+}
 }
